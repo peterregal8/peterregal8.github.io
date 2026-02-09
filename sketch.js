@@ -7,7 +7,7 @@ function preload() {
 
 
 function setup() {
-  createCanvas(1500, 700);
+  createCanvas(900, 500);
   
   for (let i = 0; i < table.getRowCount(); i++) {
     let artist = table.getString(i, 'Artist');
