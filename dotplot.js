@@ -75,7 +75,7 @@ function draw() {
       fill(0);
       textSize(10);
       textAlign(RIGHT, CENTER);
-      text(artists[i].artist, mL - 2, y + barH / 2);
+      text(artists[i].artist, mL - 2, y + barH - 6);
   }
 
   textSize(12);
