@@ -7,7 +7,7 @@ function preload() {
 
 
 function setup() {
-  createCanvas(900, 600);
+  createCanvas(1500, 700);
   
   for (let i = 0; i < table.getRowCount(); i++) {
     let artist = table.getString(i, 'Artist');
@@ -27,7 +27,7 @@ function draw() {
 
   let maxVal = Math.ceil(artists[0].streams / 1000) * 1000;
   let step = pH / artists.length;
-  let barH = step * 0.8;
+  let barH = step * 0.5;
 
   textSize(18);
   textAlign(CENTER);
@@ -45,7 +45,7 @@ function draw() {
   for (let i = 0; i <= numTicks; i++) {
       let val = (maxVal / numTicks) * i;
       let x = map(val, 0, maxVal, mL, width - mR);
-      text(Math.round(val), x, height - mB + 8);
+      text(val, x, height - mB + 8);
       stroke(215);
       strokeWeight(1);
       line(x, mT, x, height - mB);
@@ -72,7 +72,6 @@ function draw() {
 
   textSize(12);
   textAlign(CENTER);
-  text("Artist", 60, 250);
-  noLoop();
+  text("Artist", mL - 100, pH / 2);
   
 }
