@@ -72,6 +72,6 @@ function draw() {
 
   textSize(12);
   textAlign(CENTER);
-  text("Artist", mL - 100, pH / 2 + 30);
+  text("Artist", mL - 100, pH / 2 + 70);
   
 }
