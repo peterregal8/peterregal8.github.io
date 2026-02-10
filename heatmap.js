@@ -37,7 +37,7 @@ function draw() {
   fill(0);
   textSize(12);
   textAlign(CENTER);
-  text("Genre", mL + pW / 2, height - 60);
+  text("Genre", mL + pW / 2 - 90, height - 60);
   
   textSize(10);
   for (let i = 0; i < 9; i++) {
