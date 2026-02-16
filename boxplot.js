@@ -23,7 +23,6 @@ function setup() {
   for (let i = 0; i < prices.length; i++) {
     let name = prices[i].name;
     let price = prices[i].price;
-    //console.log(name);
     if (name !== currName) {
       allLists.push(currList);
       currList = [];
