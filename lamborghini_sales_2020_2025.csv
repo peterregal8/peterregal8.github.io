@@ -1,4 +1,4 @@
-201~200~Model,Year,Region,Color,Fuel Type,Base Price (USD),Horsepower,Sales Volume,Turbo (Yes/No)
+Model,Year,Region,Color,Fuel Type,Base Price (USD),Horsepower,Sales Volume,Turbo (Yes/No)
 Urus,2020,EMEA,Black,Gasoline,230000,641,4500,Yes
 Urus,2020,Americas,White,Gasoline,240000,641,4800,Yes
 Urus,2020,APAC,Red,Gasoline,235000,641,2700,Yes
