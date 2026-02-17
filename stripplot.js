@@ -5,7 +5,7 @@ let maxVal = 6000;
 let binWidth = 1000;
 
 function preload() {
-  table = loadTable('lamborghini_sales.csv', 'csv', 'header');
+  table = loadTable('lamborghini_sales_2020_2025.csv', 'csv', 'header');
 }
 
 function setup() {
