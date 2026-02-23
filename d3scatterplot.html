@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bar Chart in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- Adapted bar chart implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
     <style>
         .bar {
             fill: orangered;
@@ -47,8 +47,6 @@
     <!-- Tooltip element -->
     <div class="tooltip" id="tooltip"></div>
 
-    <div id="label"></div>
-
     <script>
 
 
@@ -65,14 +63,14 @@
 
         d3.csv("Top100SpotifySongs.csv", function(data) {
             return {
-                artist : data["Artist"],
-                streams : +data["Spotify_Streams_Millions"]
+                duration : +data["Duration_Seconds"],
+                score : +data["Popularity_Score"]
             };
         }).then(function(dataset) {
 
             // Sort function found from https://d3js.org/d3-array/sort
             dataset.sort(function(a, b) {
-                return d3.ascending(a.streams, b.streams);
+                return d3.ascending(a.score, b.score);
             });
             console.log(dataset);
 
@@ -108,15 +106,14 @@
 
 
             // Scaling and tooltips 
-            const scaleY = d3.scaleBand()
-                .domain(dataset.map(d => d.artist))
-                .range([height, 0])
-                .padding(0.1);
-
             const scaleX = d3.scaleLinear()
-                .domain([0, d3.max(dataset, d => d.streams)])
-                .nice()
+                .domain(d3.extent(dataset, d => d.duration))
                 .range([0, width]);
+
+            const scaleY = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.score))
+                .nice()
+                .range([height, 0]);
 
             chart.append("g")
                 .attr("class", "axis axis-x")
@@ -134,37 +131,24 @@
             chart.selectAll(".bar")
                 .data(dataset)
                 .enter()
-                .append("rect")
+                .append("circle")
                 .attr("class", "bar")
-                .attr("y", d => scaleY(d.artist))
-                .attr("x", 0)
-                .attr("height", scaleY.bandwidth())
-                .attr("width", d => scaleX(d.streams))
+                .attr("cx", d => scaleX(d.duration))
+                .attr("cy", d => scaleY(d.score))
+                .attr("r", 5)
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<strong>${d.artist}</strong>: ${d.streams}`)
+                        .html(`<strong>${d.duration}</strong>: ${d.score}`)
                         .style("opacity", 1);
                 })
                 .on("mousemove", (event) => {
-                    console.log("TOOLTIP");
                     tooltip
                         .style("left", (event.pageX + 12) + "px")
                         .style("top",  (event.pageY - 28) + "px");
                 })
                 .on("mouseleave", () => {
                     tooltip.style("opacity", 0);
-                });
-
-            const round = d3.format(".1f")
-
-            svg.selectAll(".label")
-                .data(dataset)
-                .enter()
-                .append("text")
-                    .attr("x", d => scaleX(d.streams) + 95)
-                    .attr("y", d => scaleY(d.artist) + 53)
-                    .attr("class", "label")
-                    .text(d => round(d.streams));   
+                });   
         });
     </script>
 </body>
