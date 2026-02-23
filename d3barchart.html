@@ -164,6 +164,7 @@
                     .attr("x", d => scaleX(d.streams) + 95)
                     .attr("y", d => scaleY(d.artist) + 53)
                     .attr("class", "label")
+                    .style("font-family", "Helvetica")
                     .text(d => round(d.streams));   
         });
     </script>
