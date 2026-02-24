@@ -73,7 +73,6 @@
             dataset.sort(function(a, b) {
                 return d3.ascending(a.score, b.score);
             });
-            console.log(dataset);
 
             const svg = d3.select("#chart-container")
                 .append("svg")
