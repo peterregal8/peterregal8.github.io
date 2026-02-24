@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scatter Plot in D3</title>
+    <title>Heat Map in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
     <style>
@@ -63,17 +63,20 @@
         const height = svgHeight - margin.top - margin.bottom;
 
 
-        d3.csv("Top100SpotifySongs.csv", function(data) {
+        d3.csv("SpotifyGenres.csv", function(data) {
             return {
                 artist : data["Artist"],
-                streams : +data["Spotify_Streams_Millions"]
+                genre: data["Genre"],
+                songs : +data["Number of Songs"]
             };
         }).then(function(dataset) {
 
             // Sort function found from https://d3js.org/d3-array/sort
             dataset.sort(function(a, b) {
-                return d3.ascending(a.streams, b.streams);
+                return d3.ascending(b.artist, a.artist);
             });
+
+            console.log(dataset);
 
             const svg = d3.select("#chart-container")
                 .append("svg")
@@ -88,13 +91,13 @@
                 .attr("x", width / 2)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
-                .text("Number of Total Spotify Streams by Artist in 2025");
+                .text("Frequency of Genres Among Artists in 2025");
 
             svg.append("text")
                 .attr("x", width / 1.5)
                 .attr("y", svgHeight - margin.bottom + 40)
                 .style("font-family", "Helvetica")
-                .text("Spotify Streams (Millions)");
+                .text("Genre");
 
             var rotateY = margin.top / 2;
 
@@ -112,10 +115,23 @@
                 .range([height, 0])
                 .padding(0.1);
 
-            const scaleX = d3.scaleLinear()
-                .domain([0, d3.max(dataset, d => d.streams)])
-                .nice()
+            let uniqueGenres = [];
+
+            const genres = dataset.map(d => d.genre);
+            uniqueGenres = [...new Set(genres)];
+
+            const scaleX = d3.scaleBand()
+                .domain(uniqueGenres)
                 .range([0, width]);
+
+            
+            //console.log(d3.max(d => d.songs))
+
+            
+            const scaleColor = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.songs))
+                .range([0, 1]);
+            
 
             chart.append("g")
                 .attr("class", "axis axis-x")
@@ -136,12 +152,13 @@
                 .append("rect")
                 .attr("class", "bar")
                 .attr("y", d => scaleY(d.artist))
-                .attr("x", 0)
+                .attr("x", d => scaleX(d.genre))
                 .attr("height", scaleY.bandwidth())
-                .attr("width", d => scaleX(d.streams))
+                .style("opacity", d => scaleColor(d.songs))
+                .attr("width", 81)
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<strong>${d.artist}</strong>: ${d.streams}`)
+                        .html(`<strong>${d.artist}</strong>: ${d.genre} - ${d.songs}`)
                         .style("font-family", "Helvetica")
                         .style("opacity", 1);
                 })
@@ -153,18 +170,6 @@
                 .on("mouseleave", () => {
                     tooltip.style("opacity", 0);
                 });
-
-            const round = d3.format(".1f")
-
-            svg.selectAll(".label")
-                .data(dataset)
-                .enter()
-                .append("text")
-                    .attr("x", d => scaleX(d.streams) + 88)
-                    .attr("y", d => scaleY(d.artist) + 53)
-                    .attr("class", "label")
-                    .style("font-family", "Helvetica")
-                    .text(d => round(d.streams));   
         });
     </script>
 </body>

@@ -65,6 +65,7 @@
             return {
                 duration : +data["Duration_Seconds"],
                 score : +data["Popularity_Score"]
+                artist: data["Artist"]
             };
         }).then(function(dataset) {
 
@@ -141,7 +142,7 @@
                 .attr("r", 5)
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<text>Duration: </text>${d.duration}<text>, Score: </text> ${d.score}`)
+                        .html(`${d.artist}<text>Duration: </text>${d.duration}<text>, Score: </text> ${d.score}`)
                         .style("opacity", 1)
                         .style("font-family", "Helvetica");
                 })
