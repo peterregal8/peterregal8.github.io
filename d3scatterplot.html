@@ -64,7 +64,7 @@
         d3.csv("Top100SpotifySongs.csv", function(data) {
             return {
                 duration : +data["Duration_Seconds"],
-                score : +data["Popularity_Score"]
+                score : +data["Popularity_Score"],
                 artist: data["Artist"]
             };
         }).then(function(dataset) {
