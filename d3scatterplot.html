@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart in D3</title>
+    <title>Scatter Plot in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
     <style>
@@ -56,7 +56,7 @@
 
         const svgWidth = 900;
         const svgHeight = 500;
-        const margin = { top: 40, right: 20, bottom: 50, left: 150 };
+        const margin = { top: 40, right: 20, bottom: 50, left: 100 };
         const width = svgWidth - margin.left - margin.right;
         const height = svgHeight - margin.top - margin.bottom;
 
@@ -84,13 +84,13 @@
 
 
             svg.append("text")
-                .attr("x", width / 2)
+                .attr("x", width / 2.5)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
                 .text("Duration Seconds vs Popularity Score of Spotify's Top Artists of 2025");
 
             svg.append("text")
-                .attr("x", width / 1.5)
+                .attr("x", width / 1.75)
                 .attr("y", svgHeight - margin.bottom + 40)
                 .style("font-family", "Helvetica")
                 .text("Duration Seconds");
@@ -100,14 +100,17 @@
             svg.append("text")
                 .attr("x", 100)
                 .attr("y", margin.top / 2)
-                .attr("transform", "rotate(270, 200, 170)")
-                .style("Popularity Score")
-                .text("Artist");
+                .attr("transform", "rotate(270, 220, 180)")
+                .style("font-family", "Helvetica")
+                .text("Popularity Score");
+
+            console.log(d3.min(dataset, d => d.duration))
+            console.log(d3.max(dataset, d => d.duration))
 
 
             // Scaling and tooltips 
             const scaleX = d3.scaleLinear()
-                .domain(d3.extent(dataset, d => d.duration))
+                .domain([d3.min(dataset, d => d.duration) - 50, d3.max(dataset, d => d.duration) + 50])
                 .range([0, width]);
 
             const scaleY = d3.scaleLinear()
@@ -138,7 +141,7 @@
                 .attr("r", 5)
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<strong>${d.duration}</strong>: ${d.score}`)
+                        .html(`<text>Duration: </text>${d.duration}<text>, Score: </text> ${d.score}`)
                         .style("opacity", 1);
                 })
                 .on("mousemove", (event) => {

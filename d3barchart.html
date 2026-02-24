@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart in D3</title>
+    <title>Scatter Plot in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- Adapted bar chart implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
     <style>
         .bar {
             fill: orangered;
@@ -53,8 +53,8 @@
 
 
         // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
-        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title
-        // and the axes.
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // axes, and labels.
 
         const svgWidth = 900;
         const svgHeight = 500;
@@ -74,7 +74,6 @@
             dataset.sort(function(a, b) {
                 return d3.ascending(a.streams, b.streams);
             });
-            console.log(dataset);
 
             const svg = d3.select("#chart-container")
                 .append("svg")
@@ -162,7 +161,7 @@
                 .enter()
                 .append("text")
                     .attr("x", d => scaleX(d.streams) + 88)
-                    .attr("y", d => scaleY(d.artist) + 53)
+                    .attr("y", d => scaleY(d.artist) + 52)
                     .attr("class", "label")
                     .style("font-family", "Helvetica")
                     .text(d => round(d.streams));   
