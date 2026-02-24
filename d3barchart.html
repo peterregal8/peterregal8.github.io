@@ -142,6 +142,7 @@
                 .on("mouseover", (event, d) => {
                     tooltip
                         .html(`<strong>${d.artist}</strong>: ${d.streams}`)
+                        .style("font-family", "Helvetica")
                         .style("opacity", 1);
                 })
                 .on("mousemove", (event) => {
@@ -161,7 +162,7 @@
                 .enter()
                 .append("text")
                     .attr("x", d => scaleX(d.streams) + 88)
-                    .attr("y", d => scaleY(d.artist) + 52)
+                    .attr("y", d => scaleY(d.artist) + 51)
                     .attr("class", "label")
                     .style("font-family", "Helvetica")
                     .text(d => round(d.streams));   
