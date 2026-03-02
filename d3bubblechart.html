@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Chart in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <style>
+        .bar {
+            fill: orangered;
+        }
+        .bar:hover {
+            fill: green;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <div id="label"></div>
+
+    <script>
+
+
+        // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // axes, and labels.
+
+        const svgWidth = 900;
+        const svgHeight = 500;
+        const margin = { top: 40, right: 70, bottom: 60, left: 150 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+
+        d3.csv("water_consumption.csv", function(data) {
+            return {
+                year : +data["Year"],
+                continent : data["Continent"],
+                total_consumption : +data["Total Water Consumption (Billion m3)"],
+                depletion : +data["Groundwater Depletion Rate (%)"],
+                rainfall : +data["Rainfall Impact (mm)"]
+            };
+        }).then(function(dataset) {
+
+            const only2025 = dataset.filter(function(d) {
+                return d.year == 2025;
+            });
+
+            const svg = d3.select("#chart-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+            svg.append("text")
+                .attr("x", width / 2.5)
+                .attr("y", margin.top / 2)
+                .style("font-family", "Helvetica")
+                .text("Water Consumption vs Rainfall Impact of 13 Countries in 2025");
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", svgHeight - margin.bottom + 50)
+                .style("font-family", "Helvetica")
+                .text("Total Water Consumption (Billion m3)");
+
+
+            svg.append("text")
+                .attr("x", 100)
+                .attr("y", margin.top / 2)
+                .attr("transform", "rotate(270, 240, 190)")
+                .style("font-family", "Helvetica")
+                .text("Rainfall Impact (mm)");
+
+
+            console.log(only2025);
+            // Scaling and tooltips 
+            const scaleX = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.total_consumption))
+                .range([0, width])
+
+
+            const scaleY = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.rainfall))
+                .range([height, 0]);
+
+
+            // Size of each circle determined by the groundwater depletion rate
+            const scaleSize = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.depletion))
+                .range([5, 30]);
+
+            
+            // Color of each circle determined by which continent the country is in
+            const scaleColor = d3.scaleOrdinal(d3.schemeCategory10)
+                .domain(d3.extent(dataset, d => d.continent));
+
+            
+
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(-20, ${height + 10})`)
+                .call(d3.axisBottom(scaleX));
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .attr("transform", `translate(-20, 10)`)
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Tooltip reference
+            const tooltip = d3.select("#tooltip");
+
+            // Add bars with tooltip events
+            chart.selectAll(".bar")
+                .data(only2025)
+                .enter()
+                .append("circle")
+                .attr("class", "bar")
+                .attr("cx", d => scaleX(d.total_consumption))
+                .attr("cy", d => scaleY(d.rainfall))
+                .attr("r", d => scaleSize(d.depletion))
+                .style("fill", d => scaleColor(d.continent))
+                .attr("stroke","black")
+                .attr("stroke-width", 2);
+        });
+    </script>
+</body>
+</html>
