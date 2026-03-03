@@ -160,9 +160,9 @@
                 .attr("stroke-width", 2)
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<text>Total Water Consumption: </text>${d.total_consumption}
-                            <br><text>Rainfall Impact: </text>${d.rainfall}
-                            <br><text>Groundwater Depletion Rate: </text>${d.depletion}
+                        .html(`<text>Total Water Consumption: </text>${d.total_consumption}<text> billion m3</text>
+                            <br><text>Rainfall Impact: </text>${d.rainfall}<text> mm</text>
+                            <br><text>Groundwater Depletion Rate: </text>${d.depletion}%
                             <br><text>Continent: </text>${d.continent}`)
                         .style("font-family", "Helvetica")
                         .style("opacity", 1);
