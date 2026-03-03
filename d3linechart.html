@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Line Chart in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling) -->
     <style>
         .bar {
             fill: orangered;
@@ -53,7 +53,7 @@
 
 
         // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
-        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // for this visualization. The scaling is an identical implementation to that code, and I added my own svg text elements for the title,
         // axes, and labels.
 
         const svgWidth = 900;
@@ -108,7 +108,7 @@
                 .text("Rainfall Impact (mm)");
 
 
-            // Scaling and tooltips 
+            // Scaling 
             const scaleX = d3.scaleLinear()
                 .domain([d3.min(onlyChina, d => d.year), d3.max(onlyChina, d => d.year)])
                 .range([0, width]);
@@ -136,7 +136,6 @@
                 .y(d => scaleY(d.rainfall));
 
             
-            // Add bars with tooltip events
             chart.append("path")
                 .datum(onlyChina)
                 .attr("d", line)
