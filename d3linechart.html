@@ -95,11 +95,10 @@
                 .text("Rainfall Impact of China from 2016 to 2025");
 
             svg.append("text")
-                .attr("x", width / 1.5)
+                .attr("x", width / 1.4)
                 .attr("y", svgHeight - margin.bottom + 50)
                 .style("font-family", "Helvetica")
                 .text("Year");
-
 
             svg.append("text")
                 .attr("x", 100)
@@ -108,9 +107,10 @@
                 .style("font-family", "Helvetica")
                 .text("Rainfall Impact (mm)");
 
+
             // Scaling and tooltips 
             const scaleX = d3.scaleLinear()
-                .domain([d3.min(dataset, d => d.year), d3.max(dataset, d => d.year)])
+                .domain([2016, d3.max(dataset, d => d.year)])
                 .range([0, width]);
 
 
