@@ -110,7 +110,7 @@
 
             // Scaling and tooltips 
             const scaleX = d3.scaleLinear()
-                .domain([2016, d3.max(dataset, d => d.year)])
+                .domain([d3.min(onlyChina, d => d.year), d3.max(onlyChina, d => d.year)])
                 .range([0, width]);
 
 
