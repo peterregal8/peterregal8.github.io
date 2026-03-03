@@ -130,8 +130,6 @@
                 .attr("class", "axis axis-y")
                 .call(d3.axisLeft(scaleY).ticks(5));
 
-            // Tooltip reference
-            const tooltip = d3.select("#tooltip");
 
             var line = d3.line()
                 .x(d => scaleX(d.year))

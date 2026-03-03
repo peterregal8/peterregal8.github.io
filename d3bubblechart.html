@@ -145,6 +145,8 @@
             const tooltip = d3.select("#tooltip");
 
             // Add bars with tooltip events
+            // Tooltip code adapted from in-class code provided on edStem on 2/20/2026
+            // (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522)
             chart.selectAll(".bar")
                 .data(only2025)
                 .enter()
@@ -155,7 +157,24 @@
                 .attr("r", d => scaleSize(d.depletion))
                 .style("fill", d => scaleColor(d.continent))
                 .attr("stroke","black")
-                .attr("stroke-width", 2);
+                .attr("stroke-width", 2)
+                .on("mouseover", (event, d) => {
+                    tooltip
+                        .html(`<text>Total Water Consumption: </text>${d.total_consumption}
+                            <br><text>Rainfall Impact: </text>${d.rainfall}
+                            <br><text>Groundwater Depletion Rate: </text>${d.depletion}
+                            <br><text>Continent: </text>${d.continent}`)
+                        .style("font-family", "Helvetica")
+                        .style("opacity", 1);
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });
         });
     </script>
 </body>
