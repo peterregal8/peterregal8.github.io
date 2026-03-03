@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Chart in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <style>
+        .bar {
+            fill: orangered;
+        }
+        .bar:hover {
+            fill: green;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <div id="label"></div>
+
+    <script>
+
+
+        // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // axes, and labels.
+
+        const svgWidth = 900;
+        const svgHeight = 500;
+        const margin = { top: 40, right: 70, bottom: 60, left: 150 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const formatTime = d3.utcFormat("%Y");
+
+
+        d3.csv("water_consumption.csv", function(data) {
+            return {
+                year : data["Year"],
+                country : data["Country"],
+                total_consumption : +data["Total Water Consumption (Billion m3)"],
+                depletion : +data["Groundwater Depletion Rate (%)"],
+                rainfall : +data["Rainfall Impact (mm)"]
+            };
+        }).then(function(dataset) {
+
+            const onlyChina = dataset.filter(function(d) {
+                return d.country == "China";
+            });
+
+            const svg = d3.select("#chart-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", margin.top / 2)
+                .style("font-family", "Helvetica")
+                .text("Rainfall Impact of China from 2016 to 2025");
+
+            svg.append("text")
+                .attr("x", width / 1.5)
+                .attr("y", svgHeight - margin.bottom + 50)
+                .style("font-family", "Helvetica")
+                .text("Year");
+
+
+            svg.append("text")
+                .attr("x", 100)
+                .attr("y", margin.top / 2)
+                .attr("transform", "rotate(270, 240, 190)")
+                .style("font-family", "Helvetica")
+                .text("Rainfall Impact (mm)");
+
+            // Scaling and tooltips 
+            const scaleX = d3.scaleLinear()
+                .domain([d3.min(dataset, d => d.year), d3.max(dataset, d => d.year)])
+                .range([0, width]);
+
+
+            const scaleY = d3.scaleLinear()
+                .domain(d3.extent(dataset, d => d.rainfall))
+                .range([height, 0]);
+
+
+            var xAxis = d3.axisBottom(scaleX).tickFormat(d => d.toString()); 
+
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(xAxis);
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Tooltip reference
+            const tooltip = d3.select("#tooltip");
+
+            var line = d3.line()
+                .x(d => scaleX(d.year))
+                .y(d => scaleY(d.rainfall));
+
+            
+            // Add bars with tooltip events
+            chart.append("path")
+                .datum(onlyChina)
+                .attr("d", line)
+                .style("fill", "none")
+                .style("stroke", "black");
+                
+        });
+    </script>
+</body>
+</html>
