@@ -58,14 +58,15 @@
 
         const svgWidth = 900;
         const svgHeight = 500;
-        const margin = { top: 40, right: 70, bottom: 60, left: 150 };
+        const margin = { top: 40, right: 35, bottom: 60, left: 150 };
         const width = svgWidth - margin.left - margin.right;
         const height = svgHeight - margin.top - margin.bottom;
 
+        const formatTime = d3.utcFormat("%Y");
 
         d3.csv("water_consumption.csv", function(data) {
             return {
-                year : +data["Year"],
+                year : data["Year"].toString(),
                 continent : data["Continent"],
                 total_consumption : +data["Total Water Consumption (Billion m3)"],
                 depletion : +data["Groundwater Depletion Rate (%)"],
@@ -87,7 +88,7 @@
 
 
             svg.append("text")
-                .attr("x", width / 2.5)
+                .attr("x", width / 2.75)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
                 .text("Water Consumption vs Rainfall Impact of 13 Countries in 2025");
@@ -107,15 +108,14 @@
                 .text("Rainfall Impact (mm)");
 
 
-            console.log(only2025);
             // Scaling and tooltips 
             const scaleX = d3.scaleLinear()
-                .domain(d3.extent(dataset, d => d.total_consumption))
+                .domain([d3.min(dataset, d => d.total_consumption), Math.ceil(d3.max(dataset, d => d.total_consumption) / 100) * 100])
                 .range([0, width])
 
 
             const scaleY = d3.scaleLinear()
-                .domain(d3.extent(dataset, d => d.rainfall))
+                .domain([d3.min(dataset, d => d.rainfall), Math.ceil(d3.max(dataset, d => d.rainfall) / 100) * 100])
                 .range([height, 0]);
 
 
