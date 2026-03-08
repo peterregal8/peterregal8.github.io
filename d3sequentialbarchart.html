@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequential Bar Chart in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <style>
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <div id="label"></div>
+
+    <script>
+
+
+        // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // axes, and labels.
+
+        const svgWidth = 900;
+        const svgHeight = 500;
+        const margin = { top: 40, right: 20, bottom: 50, left: 150 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+
+        d3.csv("lamborghini_sales_2020_2025.csv", function(data) {
+            return {
+                model : data["Model"],
+                sales : +data["Sales Volume"]
+            };
+        }).then(function(dataset) {
+
+
+            console.log(dataset);
+
+
+            // Used rollup function example from https://observablehq.com/@d3/d3-group
+            const grouped = d3.rollup(
+                dataset,
+                v => d3.sum(v, d => d.sales),
+                d => d.model);
+
+
+            // Learned how to convert into normal array from https://observablehq.com/@milafrerichs/d3-rollup
+            const result = Array.from(
+                grouped,
+                ([model, sales]) => ({ model, sales}));
+
+            console.log(grouped);
+            console.log(result);
+
+            // Sort function found from https://d3js.org/d3-array/sort
+            result.sort(function(a, b) {
+                return d3.ascending(b.sales, a.sales);
+            });
+
+            const svg = d3.select("#chart-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+            svg.append("text")
+                .attr("x", width / 2.5)
+                .attr("y", margin.top / 2)
+                .style("font-family", "Helvetica")
+                .text("Total Lamborghini Sales Volume from 2020 to 2025 by Model");
+
+            svg.append("text")
+                .attr("x", width / 1.5)
+                .attr("y", svgHeight - margin.bottom + 40)
+                .style("font-family", "Helvetica")
+                .text("Model");
+
+            var rotateY = margin.top / 2;
+
+            svg.append("text")
+                .attr("x", 100)
+                .attr("y", margin.top / 2)
+                .attr("transform", "rotate(270, 230, 160)")
+                .style("font-family", "Helvetica")
+                .text("Sales Volume");
+
+
+            // Scaling and tooltips 
+            const scaleX = d3.scaleBand()
+                .domain(result.map(d => d.model))
+                .range([0, width])
+                .padding(0.1);
+
+            const scaleY = d3.scaleLinear()
+                .domain(d3.extent(result, d => d.sales))
+                .nice()
+                .range([height, 0]);
+
+
+            // Color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
+            const scaleColor = d3.scaleOrdinal(["#0868ac", "#43a2ca", "#7bccc4", "#a8ddb5", "#ccebc5", "#f0f9e8"]);
+
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX));
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Tooltip reference
+            const tooltip = d3.select("#tooltip");
+
+            // Add bars with tooltip events
+            chart.selectAll(".bar")
+                .data(result)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => scaleX(d.model) + 25)
+                .attr("y", d => scaleY(d.sales))
+                .attr("width", 50)
+                .attr("height", d => height - scaleY(d.sales))
+                .attr("fill", d => scaleColor(d.sales))
+                .on("mouseover", (event, d) => {
+                    tooltip
+                        .html(`<strong>${d.model}</strong>: ${d.sales}`)
+                        .style("font-family", "Helvetica")
+                        .style("opacity", 1);
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });
+
+            const round = d3.format(".1f")
+
+            svg.selectAll(".label")
+                .data(result)
+                .enter()
+                .append("text")
+                    .attr("x", d => scaleX(d.model) + 180)
+                    .attr("y", d => scaleY(d.sales) + 35)
+                    .attr("class", "label")
+                    .style("font-family", "Helvetica")
+                    .text(d => d.sales);   
+        });
+    </script>
+</body>
+</html>
