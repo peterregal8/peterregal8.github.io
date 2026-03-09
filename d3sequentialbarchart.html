@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sequential Bar Chart in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
     <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
     <style>
         .axis-x path,
@@ -130,10 +132,6 @@
                 .nice()
                 .range([height, 0]);
 
-
-            // Color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
-            const scaleColor = d3.scaleOrdinal(["#0868ac", "#43a2ca", "#7bccc4", "#a8ddb5", "#ccebc5", "#f0f9e8"]);
-
             chart.append("g")
                 .attr("class", "axis axis-x")
                 .attr("transform", `translate(0, ${height})`)
@@ -142,6 +140,28 @@
             chart.append("g")
                 .attr("class", "axis axis-y")
                 .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
+            // Used code from the d3-legend page: https://d3-legend.susielu.com/
+            var quantize = d3.scaleQuantize()
+                .domain([0, Math.ceil(d3.max(result, d => d.sales) / 10000) * 10000])
+                .range(["#f0f9e8", "#ccebc5", "#a8ddb5", "#7bccc4", "#43a2ca",  "#0868ac"]);
+
+
+            svg.append("g")
+                .attr("class", "legendQuant")
+                .style("font-family", "Helvetica")
+                .attr("transform", "translate(600,100)");
+
+            var legend = d3.legendColor()
+                .labelFormat(d3.format(".0f"))
+                .ascending(true)
+                .title("Legend")
+                .titleWidth(100)
+                .scale(quantize);
+
+            svg.select(".legendQuant")
+                .call(legend);
 
             // Tooltip reference
             const tooltip = d3.select("#tooltip");
@@ -156,7 +176,7 @@
                 .attr("y", d => scaleY(d.sales))
                 .attr("width", 50)
                 .attr("height", d => height - scaleY(d.sales))
-                .attr("fill", d => scaleColor(d.sales))
+                .attr("fill", d => quantize(d.sales))
                 .on("mouseover", (event, d) => {
                     tooltip
                         .html(`<strong>${d.model}</strong>: ${d.sales}`)
