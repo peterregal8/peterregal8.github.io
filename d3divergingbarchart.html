@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Bar Chart in D3</title>
+    <title>Diverging Bar Chart in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
     <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
@@ -137,7 +137,7 @@
             var legend = d3.legendColor()
                 .labelFormat(d3.format(".0f"))
                 .ascending(true)
-                .title("Legend")
+                .title("Score")
                 .titleWidth(100)
                 .scale(quantize);
 
@@ -173,19 +173,6 @@
                     tooltip.style("opacity", 0);
                 });
 
-            const round = d3.format(".1f")
-
-            /*
-            svg.selectAll(".label")
-                .data(dataset)
-                .enter()
-                .append("text")
-                    .attr("x", d => scaleX(d.streams) + 88)
-                    .attr("y", d => scaleY(d.artist) + 53)
-                    .attr("class", "label")
-                    .style("font-family", "Helvetica")
-                    .text(d => round(d.streams));  
-            */ 
         });
     </script>
 </body>

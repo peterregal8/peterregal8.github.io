@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qualitative Scatterplot in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <style>
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+
+
+        // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title
+        // and the axes.
+
+        const svgWidth = 900;
+        const svgHeight = 500;
+        const margin = { top: 40, right: 150, bottom: 50, left: 100 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+
+        d3.csv("top_100_spotify_songs_2025.csv", function(data) {
+            return {
+                rank : +data["Rank"], 
+                genre : data["Genre"],
+                score : +data["Popularity_Score"],
+                duration : +data["Duration_Seconds"]
+            };
+        }).then(function(dataset) {
+
+
+            // Limiting the number of genres to 5 to make the chart more readable and reduce clutter
+
+            const limitGenres = dataset.filter(function(d) {
+                return d.genre === "Afrobeats" || d.genre === "Electronic" || 
+                        d.genre === "Hip-Hop" || d.genre === "Indie" ||
+                        d.genre === "K-Pop";
+            });
+
+            const svg = d3.select("#chart-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+            svg.append("text")
+                .attr("x", width / 3)
+                .attr("y", margin.top / 2)
+                .style("font-family", "Helvetica")
+                .text("Duration Seconds vs Popularity Score of Spotify's Top Songs of 2025");
+
+            svg.append("text")
+                .attr("x", width / 1.75)
+                .attr("y", svgHeight - margin.bottom + 40)
+                .style("font-family", "Helvetica")
+                .text("Duration Seconds");
+
+            var rotateY = margin.top / 2;
+
+            svg.append("text")
+                .attr("x", 100)
+                .attr("y", margin.top / 2)
+                .attr("transform", "rotate(270, 220, 180)")
+                .style("font-family", "Helvetica")
+                .text("Popularity Score");
+
+            // Scaling and tooltips 
+            const scaleX = d3.scaleLinear()
+                .domain([d3.min(dataset, d => d.score) - 1, d3.max(dataset, d => d.score) + 1])
+                .range([0, width]);
+
+            const scaleY = d3.scaleLinear()
+                .domain([d3.min(dataset, d => d.duration) - 1, d3.max(dataset, d => d.duration) + 1])
+                .nice()
+                .range([height, 0]);
+
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX));
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Qualitative color scale from ColorBrewer: https://colorbrewer2.org/#type=qualitative&scheme=Set1&n=5
+            // Used code from the d3-legend page: https://d3-legend.susielu.com/
+            var quantize = d3.scaleOrdinal()
+                .domain(["Afrobeats", "Electronic", "Hip-Hop", "Indie", "K-Pop"])
+                .range(["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00"]);
+
+
+            svg.append("g")
+                .attr("class", "legendQuant")
+                .style("font-family", "Helvetica")
+                .attr("transform", "translate(800,150)");
+
+            var legend = d3.legendColor()
+                .labelFormat(d3.format(".0f"))
+                .title("Genre")
+                .titleWidth(100)
+                .scale(quantize);
+
+            svg.select(".legendQuant")
+                .call(legend);
+
+            // Tooltip reference
+            const tooltip = d3.select("#tooltip");
+
+            // Add bars with tooltip events
+            chart.selectAll(".bar")
+                .data(limitGenres)
+                .enter()
+                .append("circle")
+                .attr("cx", d => scaleX(d.score))
+                .attr("cy", d => scaleY(d.duration))
+                .attr("r", 5)
+                .attr("fill", d => quantize(d.genre))
+                .on("mouseover", (event, d) => {
+                    tooltip
+                        .html(`${d.genre}<text> -- Duration: </text>${d.score} seconds<text>, Score: </text> ${d.duration}`)
+                        .style("opacity", 1)
+                        .style("font-family", "Helvetica");
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });   
+        });
+    </script>
+</body>
+</html>
