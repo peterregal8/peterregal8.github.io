@@ -66,10 +66,6 @@
             };
         }).then(function(dataset) {
 
-
-            console.log(dataset);
-
-
             // Used rollup function example from https://observablehq.com/@d3/d3-group
             const grouped = d3.rollup(
                 dataset,
@@ -81,9 +77,6 @@
             const result = Array.from(
                 grouped,
                 ([model, sales]) => ({ model, sales}));
-
-            console.log(grouped);
-            console.log(result);
 
             // Sort function found from https://d3js.org/d3-array/sort
             result.sort(function(a, b) {
@@ -141,7 +134,7 @@
                 .attr("class", "axis axis-y")
                 .call(d3.axisLeft(scaleY).ticks(5));
 
-            // Color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
+            // Sequential color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
             // Used code from the d3-legend page: https://d3-legend.susielu.com/
             var quantize = d3.scaleQuantize()
                 .domain([0, Math.ceil(d3.max(result, d => d.sales) / 10000) * 10000])
