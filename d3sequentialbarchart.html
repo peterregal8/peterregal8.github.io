@@ -59,28 +59,16 @@
         const height = svgHeight - margin.top - margin.bottom;
 
 
-        d3.csv("lamborghini_sales_2020_2025.csv", function(data) {
+        d3.csv("Top100SpotifySongs.csv", function(data) {
             return {
-                model : data["Model"],
-                sales : +data["Sales Volume"]
+                artist : data["Artist"],
+                streams : +data["Spotify_Streams_Millions"]
             };
         }).then(function(dataset) {
 
-            // Used rollup function example from https://observablehq.com/@d3/d3-group
-            const grouped = d3.rollup(
-                dataset,
-                v => d3.sum(v, d => d.sales),
-                d => d.model);
-
-
-            // Learned how to convert into normal array from https://observablehq.com/@milafrerichs/d3-rollup
-            const result = Array.from(
-                grouped,
-                ([model, sales]) => ({ model, sales}));
-
             // Sort function found from https://d3js.org/d3-array/sort
-            result.sort(function(a, b) {
-                return d3.ascending(b.sales, a.sales);
+            dataset.sort(function(a, b) {
+                return d3.ascending(a.streams, b.streams);
             });
 
             const svg = d3.select("#chart-container")
@@ -93,37 +81,37 @@
 
 
             svg.append("text")
-                .attr("x", width / 2.5)
+                .attr("x", width / 2)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
-                .text("Total Lamborghini Sales Volume from 2020 to 2025 by Model");
+                .text("Number of Total Spotify Streams by Artist in 2025");
 
             svg.append("text")
                 .attr("x", width / 1.5)
                 .attr("y", svgHeight - margin.bottom + 40)
                 .style("font-family", "Helvetica")
-                .text("Model");
+                .text("Spotify Streams (Millions)");
 
             var rotateY = margin.top / 2;
 
             svg.append("text")
                 .attr("x", 100)
                 .attr("y", margin.top / 2)
-                .attr("transform", "rotate(270, 230, 160)")
+                .attr("transform", "rotate(270, 200, 170)")
                 .style("font-family", "Helvetica")
-                .text("Sales Volume");
+                .text("Artist");
 
 
             // Scaling and tooltips 
-            const scaleX = d3.scaleBand()
-                .domain(result.map(d => d.model))
-                .range([0, width])
+            const scaleY = d3.scaleBand()
+                .domain(dataset.map(d => d.artist))
+                .range([height, 0])
                 .padding(0.1);
 
-            const scaleY = d3.scaleLinear()
-                .domain(d3.extent(result, d => d.sales))
+            const scaleX = d3.scaleLinear()
+                .domain([0, d3.max(dataset, d => d.streams)])
                 .nice()
-                .range([height, 0]);
+                .range([0, width]);
 
             chart.append("g")
                 .attr("class", "axis axis-x")
@@ -137,14 +125,14 @@
             // Sequential color scale from ColorBrewer: https://colorbrewer2.org/#type=sequential&scheme=GnBu&n=6
             // Used code from the d3-legend page: https://d3-legend.susielu.com/
             var quantize = d3.scaleQuantize()
-                .domain([0, Math.ceil(d3.max(result, d => d.sales) / 10000) * 10000])
-                .range(["#f0f9e8", "#ccebc5", "#a8ddb5", "#7bccc4", "#43a2ca",  "#0868ac"]);
+                .domain([0, Math.ceil(d3.max(dataset, d => d.streams) / 1000) * 1000])
+                .range(["#ccebc5", "#a8ddb5", "#7bccc4", "#43a2ca",  "#0868ac"]);
 
 
             svg.append("g")
                 .attr("class", "legendQuant")
                 .style("font-family", "Helvetica")
-                .attr("transform", "translate(600,100)");
+                .attr("transform", "translate(700,200)");
 
             var legend = d3.legendColor()
                 .labelFormat(d3.format(".0f"))
@@ -161,18 +149,18 @@
 
             // Add bars with tooltip events
             chart.selectAll(".bar")
-                .data(result)
+                .data(dataset)
                 .enter()
                 .append("rect")
                 .attr("class", "bar")
-                .attr("x", d => scaleX(d.model) + 25)
-                .attr("y", d => scaleY(d.sales))
-                .attr("width", 50)
-                .attr("height", d => height - scaleY(d.sales))
-                .attr("fill", d => quantize(d.sales))
+                .attr("y", d => scaleY(d.artist))
+                .attr("x", 0)
+                .attr("height", scaleY.bandwidth())
+                .attr("width", d => scaleX(d.streams))
+                .attr("fill", d => quantize(d.streams))
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<strong>${d.model}</strong>: ${d.sales}`)
+                        .html(`<strong>${d.artist}</strong>: ${d.streams}`)
                         .style("font-family", "Helvetica")
                         .style("opacity", 1);
                 })
@@ -187,15 +175,17 @@
 
             const round = d3.format(".1f")
 
+            /*
             svg.selectAll(".label")
-                .data(result)
+                .data(dataset)
                 .enter()
                 .append("text")
-                    .attr("x", d => scaleX(d.model) + 180)
-                    .attr("y", d => scaleY(d.sales) + 35)
+                    .attr("x", d => scaleX(d.streams) + 88)
+                    .attr("y", d => scaleY(d.artist) + 53)
                     .attr("class", "label")
                     .style("font-family", "Helvetica")
-                    .text(d => d.sales);   
+                    .text(d => round(d.streams));  
+            */ 
         });
     </script>
 </body>

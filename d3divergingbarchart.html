@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diverging Bar Chart in D3</title>
+    <title>Sequential Bar Chart in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
     <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
@@ -59,30 +59,16 @@
         const height = svgHeight - margin.top - margin.bottom;
 
 
-        d3.csv("lamborghini_sales_2020_2025.csv", function(data) {
+        d3.csv("Top100SpotifySongs.csv", function(data) {
             return {
-                model : data["Model"],
-                hp : +data["Horsepower"]
+                artist : data["Artist"],
+                score : +data["Popularity_Score"]
             };
         }).then(function(dataset) {
 
-
-            // Used rollup function example from https://observablehq.com/@d3/d3-group
-            const grouped = d3.rollup(
-                dataset,
-                v => d3.sum(v, d => d.hp),
-                d => d.model);
-
-
-            // Learned how to convert into normal array from https://observablehq.com/@milafrerichs/d3-rollup
-            const result = Array.from(
-                grouped,
-                ([model, hp]) => ({ model, hp}));
-
-
             // Sort function found from https://d3js.org/d3-array/sort
-            result.sort(function(a, b) {
-                return d3.ascending(b.hp, a.hp);
+            dataset.sort(function(a, b) {
+                return d3.ascending(a.score, b.score);
             });
 
             const svg = d3.select("#chart-container")
@@ -95,37 +81,37 @@
 
 
             svg.append("text")
-                .attr("x", width / 2.5)
+                .attr("x", width / 2.25)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
-                .text("Combined Lamborghini Horsepower by Model (2020 - 2025)");
+                .text("Popularity Scores of the Top Spotify Artists in 2025");
 
             svg.append("text")
                 .attr("x", width / 1.5)
                 .attr("y", svgHeight - margin.bottom + 40)
                 .style("font-family", "Helvetica")
-                .text("Model");
+                .text("Popularity Score");
 
             var rotateY = margin.top / 2;
 
             svg.append("text")
                 .attr("x", 100)
                 .attr("y", margin.top / 2)
-                .attr("transform", "rotate(270, 230, 160)")
+                .attr("transform", "rotate(270, 200, 170)")
                 .style("font-family", "Helvetica")
-                .text("Horsepower");
+                .text("Artist");
 
 
             // Scaling and tooltips 
-            const scaleX = d3.scaleBand()
-                .domain(result.map(d => d.model))
-                .range([0, width])
+            const scaleY = d3.scaleBand()
+                .domain(dataset.map(d => d.artist))
+                .range([height, 0])
                 .padding(0.1);
 
-            const scaleY = d3.scaleLinear()
-                .domain([0, d3.max(result, d => d.hp)])
+            const scaleX = d3.scaleLinear()
+                .domain([0, d3.max(dataset, d => d.score)])
                 .nice()
-                .range([height, 0]);
+                .range([0, width]);
 
             chart.append("g")
                 .attr("class", "axis axis-x")
@@ -139,14 +125,14 @@
             // Diverging color scale from ColorBrewer: https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=6
             // Used code from the d3-legend page: https://d3-legend.susielu.com/
             var quantize = d3.scaleQuantize()
-                .domain([0, Math.ceil(d3.max(result, d => d.hp) / 10000) * 10000])
+                .domain([0, Math.ceil(d3.max(dataset, d => d.score) / 100) * 100])
                 .range(["#762a83", "#af8dc3", "#e7d4e8", "#d9f0d3", "#7fbf7b", "#1b7837"]);
 
 
             svg.append("g")
                 .attr("class", "legendQuant")
                 .style("font-family", "Helvetica")
-                .attr("transform", "translate(700,50)");
+                .attr("transform", "translate(700,150)");
 
             var legend = d3.legendColor()
                 .labelFormat(d3.format(".0f"))
@@ -163,18 +149,18 @@
 
             // Add bars with tooltip events
             chart.selectAll(".bar")
-                .data(result)
+                .data(dataset)
                 .enter()
                 .append("rect")
                 .attr("class", "bar")
-                .attr("x", d => scaleX(d.model) + 25)
-                .attr("y", d => scaleY(d.hp))
-                .attr("width", 50)
-                .attr("height", d => height - scaleY(d.hp))
-                .attr("fill", d => quantize(d.hp))
+                .attr("y", d => scaleY(d.artist))
+                .attr("x", 0)
+                .attr("height", scaleY.bandwidth())
+                .attr("width", d => scaleX(d.score))
+                .attr("fill", d => quantize(d.score))
                 .on("mouseover", (event, d) => {
                     tooltip
-                        .html(`<strong>${d.model}</strong>: ${d.hp}`)
+                        .html(`<strong>${d.artist}</strong>: ${d.score}`)
                         .style("font-family", "Helvetica")
                         .style("opacity", 1);
                 })
@@ -189,15 +175,17 @@
 
             const round = d3.format(".1f")
 
+            /*
             svg.selectAll(".label")
-                .data(result)
+                .data(dataset)
                 .enter()
                 .append("text")
-                    .attr("x", d => scaleX(d.model) + 180)
-                    .attr("y", d => scaleY(d.hp) + 35)
+                    .attr("x", d => scaleX(d.streams) + 88)
+                    .attr("y", d => scaleY(d.artist) + 53)
                     .attr("class", "label")
                     .style("font-family", "Helvetica")
-                    .text(d => d.sales);   
+                    .text(d => round(d.streams));  
+            */ 
         });
     </script>
 </body>
