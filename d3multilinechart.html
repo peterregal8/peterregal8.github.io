@@ -96,7 +96,7 @@
 
 
             svg.append("text")
-                .attr("x", width / 2)
+                .attr("x", width / 2.25)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
                 .text("Per Capita Water Use by Country from 2016 to 2025");
@@ -166,7 +166,6 @@
             var line = d3.line()
                 .x(d => scaleTime(d.date))
                 .y(d => scaleY(d.water_use))
-                //.defined(d => (d.year !== "2025"))
 
             
             // Referenced grouping example from https://observablehq.com/@d3/d3-group
