@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Line Chart in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+    <!-- Adapted implementation from the in-class code shared on edStem on 2/20/2026 (css style, scaling, tooltips) -->
+    <style>
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <div id="label"></div>
+
+    <script>
+
+
+        // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+        // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+        // axes, and labels.
+
+        const svgWidth = 900;
+        const svgHeight = 500;
+        const margin = { top: 40, right: 150, bottom: 60, left: 150 };
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        // Used https://d3js.org/d3-time-format to learn how to convert back and forth between dates and strings
+        const parseYear = d3.timeParse("%Y")
+        d3.csv("water_consumption.csv", function(data) {
+            return {
+                date : parseYear(data["Year"]),
+                country : data["Country"],
+                rainfall_impact : +data["Rainfall Impact (mm)"]
+            };
+        }).then(function(dataset) {
+
+            
+            const numCountries = 2;
+            const numYears = 10;
+
+
+            
+            const onlyFour = dataset.filter(function(d) {
+                return d.country === "USA" || d.country === "China" 
+                    || d.country === "Pakistan";
+            });
+
+            onlyFour.sort(function(a, b) {
+                return d3.ascending(a.country, b.country);
+            });
+            
+            console.log(onlyFour);
+
+
+            const svg = d3.select("#chart-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+            const chart = svg.append("g")
+                .style("mix-blend-mode", "multiply")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", margin.top / 2)
+                .style("font-family", "Helvetica")
+                .text("Rainfall Impact by Country from 2016 to 2025");
+
+            svg.append("text")
+                .attr("x", width / 1.4)
+                .attr("y", svgHeight - margin.bottom + 50)
+                .style("font-family", "Helvetica")
+                .text("Year");
+
+            svg.append("text")
+                .attr("x", 100)
+                .attr("y", margin.top / 2)
+                .attr("transform", "rotate(270, 270, 190)")
+                .style("font-family", "Helvetica")
+                .text("Rainfall Impact (mm)");
+
+
+            // Scaling and tooltips 
+            const scaleTime = d3.scaleTime()
+                .domain([d3.min(onlyFour, d => d.date), d3.max(onlyFour, d => d.date)])
+                .range([0, width]);
+
+
+            const scaleY = d3.scaleLinear()
+                .domain([0, d3.max(onlyFour, d => d.rainfall_impact)])
+                .range([height, 0]);
+
+
+            // Qualitative color scale from ColorBrewer: https://colorbrewer2.org/#type=qualitative&scheme=Set1&n=5
+            // Used code from the d3-legend page: https://d3-legend.susielu.com/
+            var quantize = d3.scaleOrdinal()
+                .domain(["USA", "Pakistan", "China"])
+                .range(["#e41a1c", "#377eb8", "#4daf4a"]);
+
+
+            svg.append("g")
+                .attr("class", "legendQuant")
+                .style("font-family", "Helvetica")
+                .attr("transform", "translate(800,150)");
+
+            var legend = d3.legendColor()
+                .labelFormat(d3.format(".0f"))
+                .title("Country")
+                .titleWidth(100)
+                .scale(quantize);
+
+            svg.select(".legendQuant")
+                .call(legend);
+
+
+            var xAxis = d3.axisBottom(scaleTime).tickFormat(d3.timeFormat("%Y")); 
+
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(xAxis);
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+
+             
+
+
+            const area = d3.area()
+                .x(d => scaleTime(d.date))
+                .y0(height)
+                .y1(d => scaleY(d.rainfall_impact));
+
+
+
+            // Used defined method found from https://www.geeksforgeeks.org/javascript/d3-js-line-defined-method/ 
+            // to have the 3 lines not connect to each other
+            var line = d3.line()
+                .x(d => scaleTime(d.date))
+                .y(d => scaleY(d.rainfall_impact))
+                //.defined(d => (d.year !== "2025"))
+
+            
+            // Referenced grouping example from https://observablehq.com/@d3/d3-group
+            const countries = d3.group(onlyFour, d => d.country);
+
+            countries.forEach((values, country) => {
+                values.sort((a, b) => d3.ascending(a.date, b.date));
+            });
+            
+            console.log(countries);
+
+            countries.forEach((values, country) => {
+                chart.append("path")
+                    .datum(values)
+                    .attr("fill-opacity", 0.5)
+                    .attr("fill", quantize(country))
+                    //.style("mix-blend-mode", "multiply")
+                    .attr("stroke", "none")
+                    .attr("d", area);
+
+                chart.append("path")
+                    .datum(values)
+                    .attr("fill", "none")
+                    .attr("stroke", quantize(country))
+                    .attr("stroke-width", 3)
+                    .attr("d", line);
+            });  
+
+        });
+    </script>
+</body>
+</html>
