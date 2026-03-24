@@ -110,9 +110,6 @@ d3.csv("water_consumption.csv", function(data) {
     .style("font-size", 12)
     .text("Rainfall Impact (mm)");
 
-
-  // X axes
-
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
         const g = svg.append("g")
@@ -136,6 +133,9 @@ d3.csv("water_consumption.csv", function(data) {
   }
   
   countryArray.forEach(([country, values], i) => {
+    // Easy logic I learned for indexing a 2x2 grid 
+    // i values of 0 and 2 will be in col 0 (no remainder when divisible by 2); 0 and 3 will be in col 1 (remainder of 1)
+    // i values of 0 and 1 will both be in row 0; 2 and 3 will be in row 1 (both rounded down)
     const col = i % 2;
     const row = Math.floor(i / 2);
 
