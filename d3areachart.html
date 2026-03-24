@@ -67,13 +67,10 @@
                 rainfall_impact : +data["Rainfall Impact (mm)"]
             };
         }).then(function(dataset) {
-
             
             const numCountries = 2;
             const numYears = 10;
 
-
-            
             const onlyFour = dataset.filter(function(d) {
                 return d.country === "USA" || d.country === "China" 
                     || d.country === "Pakistan";
@@ -83,16 +80,12 @@
                 return d3.ascending(a.country, b.country);
             });
             
-            console.log(onlyFour);
-
-
             const svg = d3.select("#chart-container")
                 .append("svg")
                 .attr("width", svgWidth)
                 .attr("height", svgHeight);
 
             const chart = svg.append("g")
-                .style("mix-blend-mode", "multiply")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
 
@@ -160,23 +153,14 @@
                 .attr("class", "axis axis-y")
                 .call(d3.axisLeft(scaleY).ticks(5));
 
-
-             
-
-
             const area = d3.area()
                 .x(d => scaleTime(d.date))
                 .y0(height)
                 .y1(d => scaleY(d.rainfall_impact));
 
-
-
-            // Used defined method found from https://www.geeksforgeeks.org/javascript/d3-js-line-defined-method/ 
-            // to have the 3 lines not connect to each other
             var line = d3.line()
                 .x(d => scaleTime(d.date))
                 .y(d => scaleY(d.rainfall_impact))
-                //.defined(d => (d.year !== "2025"))
 
             
             // Referenced grouping example from https://observablehq.com/@d3/d3-group
@@ -185,15 +169,13 @@
             countries.forEach((values, country) => {
                 values.sort((a, b) => d3.ascending(a.date, b.date));
             });
-            
-            console.log(countries);
 
             countries.forEach((values, country) => {
                 chart.append("path")
                     .datum(values)
                     .attr("fill-opacity", 0.5)
                     .attr("fill", quantize(country))
-                    //.style("mix-blend-mode", "multiply")
+                    .style("mix-blend-mode", "multiply")
                     .attr("stroke", "none")
                     .attr("d", area);
 
@@ -204,6 +186,32 @@
                     .attr("stroke-width", 3)
                     .attr("d", line);
             });  
+
+            // Tooltip reference
+            const tooltip = d3.select("#tooltip");
+
+            chart.selectAll(".bar")
+                .data(onlyFour)
+                .enter()
+                .append("circle")
+                .attr("cx", d => scaleTime(d.date))
+                .attr("cy", d => scaleY(d.rainfall_impact))
+                .attr("r", 5)
+                .attr("fill", d => quantize(d.country))
+                .on("mouseover", (event, d) => {
+                    tooltip
+                        .html(`${d.country} in ${d3.timeFormat("%Y")(d.date)}: ${d.rainfall_impact} mm`)
+                        .style("opacity", 1)
+                        .style("font-family", "Helvetica");
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });  
 
         });
     </script>

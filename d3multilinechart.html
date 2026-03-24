@@ -67,13 +67,10 @@
                 water_use : +data["Per Capita Water Use (L/Day)"]
             };
         }).then(function(dataset) {
-
             
             const numCountries = 2;
             const numYears = 10;
-
-
-            
+ 
             const onlyFour = dataset.filter(function(d) {
                 return d.country === "USA" || d.country === "China" 
                     || d.country === "Pakistan" || d.country === "Ethiopia";
@@ -82,9 +79,6 @@
             onlyFour.sort(function(a, b) {
                 return d3.ascending(a.country, b.country);
             });
-            
-            console.log(onlyFour);
-
 
             const svg = d3.select("#chart-container")
                 .append("svg")
@@ -96,7 +90,7 @@
 
 
             svg.append("text")
-                .attr("x", width / 2.25)
+                .attr("x", width / 2)
                 .attr("y", margin.top / 2)
                 .style("font-family", "Helvetica")
                 .text("Per Capita Water Use by Country from 2016 to 2025");
@@ -159,10 +153,7 @@
                 .attr("class", "axis axis-y")
                 .call(d3.axisLeft(scaleY).ticks(5));
 
-
-
-            // Used defined method found from https://www.geeksforgeeks.org/javascript/d3-js-line-defined-method/ 
-            // to have the 3 lines not connect to each other
+            
             var line = d3.line()
                 .x(d => scaleTime(d.date))
                 .y(d => scaleY(d.water_use))
@@ -175,7 +166,6 @@
                 values.sort((a, b) => d3.ascending(a.date, b.date));
             });
             
-            console.log(countries);
 
             countries.forEach((values, country) => {
                 chart.append("path")
