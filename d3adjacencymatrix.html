@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v6.js"></script>
+
+<style>
+    /* Tooltip and hover styles */
+    .square:hover {
+        stroke: black;
+        stroke-width: 2px;
+    }
+    .node:hover {
+        stroke: black;
+        stroke-width: 3px;  
+    }
+    .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+</style>
+
+<div id="title"></div>
+
+<div id="my_dataviz"></div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+
+
+// Used code from https://d3-graph-gallery.com/graph/network_basic.html as a resource
+// Used code from edStem post on 2/20 (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522)
+// as a resource for building tooltips
+
+const margin = {top: 10, right: 30, bottom: 30, left: 40},
+      width = 1400 - margin.left - margin.right,
+      height = 800 - margin.top - margin.bottom;
+
+const svg = d3.select("#my_dataviz")
+  .append("svg")
+  .attr("width", 1400)
+  .attr("height", 1000)
+  .append("g")
+  .attr("transform", `translate(0, 0)`);
+
+const title = d3.select("#title")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", 60)
+  .append("g")
+  .attr("transform", `translate(${width / 4}, ${50})`)
+  .append("text")
+  .text("Social Network and Adjacency Matrix from the Bottlenose Dolphins Dataset")
+  .attr("font-size", 18)
+  .attr("font-family", "Helvetica")
+  .attr("fill", "black");
+
+d3.csv("edges.csv").then(function(data) {
+
+    const nodes = d3.range(1, 63).map(d => ({ id : d}));
+
+    const degree = {};
+
+    nodes.forEach(d => {
+        degree[d.id] = 0;
+    })
+
+    // Make sure the strings are converted into integers for use in the simulation
+    data.forEach(d => {
+        d.source = +d.source;
+        d.target = +d.target;
+    });
+
+    // Since this is an undirected graph, the degree of each node increases as long as 
+    // it's either the source or the target of a link
+    data.forEach(d => {
+        degree[d.source] += 1;
+        degree[d.target] += 1;
+    })
+
+    nodes.forEach(d => {
+        d.degree = degree[d.id];
+    })
+
+    const size = nodes.length + 1
+
+    // Initializing an empty n by n matrix to hold the binary values 
+    const matrix = Array.from({ length : size }, () => Array(size).fill(0));
+
+    // Filling in the matrix values with every edge from the csv
+    data.forEach(d => {
+        matrix[d.source][d.target] = 1;
+        matrix[d.target][d.source] = 1;
+    })
+
+    const matrixData = [];
+
+    for (let i = 1; i < size; i++) {
+        for (let j = 1; j < size; j++) {
+            matrixData.push({
+                x: i,
+                y: j,
+                value: matrix[i][j]
+            });
+        }
+    }
+
+    const scaleX = d3.scaleBand()
+        .domain(d3.range(1, size))
+        .range([0, 650]);
+
+    const scaleY = d3.scaleBand()
+        .domain(d3.range(1, size))
+        .range([0, 650]);
+
+    const matrixGroup = svg.append("g")
+        .attr("width", 600)
+        .attr("height", 600)
+        .attr("transform", `translate(650, 50)`);
+
+    matrixGroup.selectAll(".square")
+        .data(matrixData)
+        .join("rect")
+        .attr("x", d => scaleX(d.x))
+        .attr("y", d => scaleY(d.y))
+        .attr("width", scaleX.bandwidth())
+        .attr("height", scaleY.bandwidth())
+        .attr("class", "square")
+        .style("fill", d => d.value ? "#69b3a2" : "#eee")
+        .style("stroke", "black")
+        .on("mouseover", (event, d) => {
+            let boolean;
+            if (d.value === 1) {
+                boolean = "True";
+            } else {
+                boolean = "False";
+            }
+            tooltip
+                .html(`<text>Node ${d.x} - Node ${d.y}: ${boolean}`)
+                .style("font-family", "Helvetica")
+                .style("opacity", 1);
+        })
+        .on("mousemove", (event) => {
+            tooltip
+            .style("left", (event.pageX + 12) + "px")
+            .style("top",  (event.pageY - 28) + "px");
+        })
+        .on("mouseleave", () => {
+            tooltip.style("opacity", 0);
+        });
+    
+    matrixGroup.selectAll(".colLabel")
+        .data(d3.range(1, size))
+        .join("text")
+        .attr("x", d => scaleX(d) + scaleX.bandwidth() / 2)
+        .attr("y", -5)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 8)
+        .attr("font-family", "Helvetica")
+        .text(d => d);
+
+    matrixGroup.selectAll(".rowLabel")
+        .data(d3.range(1, size))
+        .join("text")
+        .attr("x", -10)
+        .attr("y", d => scaleY(d) + scaleY.bandwidth() / 2 + 3)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 8)
+        .attr("font-family", "Helvetica")
+        .text(d => d);
+
+
+    // Begin force-directed graph code
+
+    const link = svg.selectAll("line")
+        .data(data)
+        .join("line")
+        .style("stroke", "#aaa");
+
+    const tooltip = d3.select("#tooltip");
+
+    const node = svg.selectAll("node")
+        .data(nodes)
+        .join("circle")
+        .attr("r", 8)
+        .attr("class", "node")
+        .style("fill", "#69b3a2")
+        .on("mouseover", (event, d) => {
+            tooltip
+                .html(`<text>Node ${d.id}: </text> Degree ${d.degree}`)
+                .style("font-family", "Helvetica")
+                .style("opacity", 1);
+        })
+        .on("mousemove", (event) => {
+            tooltip
+                .style("left", (event.pageX + 12) + "px")
+                .style("top",  (event.pageY - 28) + "px");
+        })
+        .on("mouseleave", () => {
+            tooltip.style("opacity", 0);
+        });
+
+    const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(data)
+        .id(d => d.id)
+    )
+    // Changed strength from -200 to -50 because of the larger quantity of nodes
+    .force("charge", d3.forceManyBody().strength(-50))
+    .force("center", d3.forceCenter(300, 400))
+    .on("tick", ticked);
+
+    function ticked() {
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+    node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+    }
+
+});
+
+</script>
