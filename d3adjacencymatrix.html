@@ -35,7 +35,7 @@
 <script>
 
 
-// Used code from https://d3-graph-gallery.com/graph/network_basic.html as a resource
+// Used code from https://d3-graph-gallery.com/graph/network_basic.html as a resource for the force-directed graph
 // Used code from edStem post on 2/20 (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522)
 // as a resource for building tooltips
 
@@ -77,17 +77,6 @@ d3.csv("edges.csv").then(function(data) {
         d.source = +d.source;
         d.target = +d.target;
     });
-
-    // Since this is an undirected graph, the degree of each node increases as long as 
-    // it's either the source or the target of a link
-    data.forEach(d => {
-        degree[d.source] += 1;
-        degree[d.target] += 1;
-    })
-
-    nodes.forEach(d => {
-        d.degree = degree[d.id];
-    })
 
     const size = nodes.length + 1
 
@@ -133,7 +122,13 @@ d3.csv("edges.csv").then(function(data) {
         .attr("width", scaleX.bandwidth())
         .attr("height", scaleY.bandwidth())
         .attr("class", "square")
-        .style("fill", d => d.value ? "#69b3a2" : "#eee")
+        .style("fill", function(d) {
+            if (d.value === 1) {
+                return "#69b3a2";
+            } else {
+                return "#eee";
+            }
+        })
         .style("stroke", "black")
         .on("mouseover", (event, d) => {
             let boolean;
@@ -156,7 +151,7 @@ d3.csv("edges.csv").then(function(data) {
             tooltip.style("opacity", 0);
         });
     
-    matrixGroup.selectAll(".colLabel")
+    matrixGroup.selectAll("rowText")
         .data(d3.range(1, size))
         .join("text")
         .attr("x", d => scaleX(d) + scaleX.bandwidth() / 2)
@@ -166,7 +161,7 @@ d3.csv("edges.csv").then(function(data) {
         .attr("font-family", "Helvetica")
         .text(d => d);
 
-    matrixGroup.selectAll(".rowLabel")
+    matrixGroup.selectAll("colText")
         .data(d3.range(1, size))
         .join("text")
         .attr("x", -10)
@@ -178,6 +173,17 @@ d3.csv("edges.csv").then(function(data) {
 
 
     // Begin force-directed graph code
+
+    // Since this is an undirected graph, the degree of each node increases as long as 
+    // it's either the source or the target of a link
+    data.forEach(d => {
+        degree[d.source] += 1;
+        degree[d.target] += 1;
+    })
+
+    nodes.forEach(d => {
+        d.degree = degree[d.id];
+    })
 
     const link = svg.selectAll("line")
         .data(data)
