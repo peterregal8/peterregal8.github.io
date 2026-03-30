@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v6.js"></script>
+
+<div id="title"></div>
+
+<div id="my_dataviz"></div>
+
+<script>
+
+
+// Used code from https://d3-graph-gallery.com/graph/network_basic.html as a resource
+
+const margin = {top: 10, right: 30, bottom: 30, left: 40},
+      width = 800 - margin.left - margin.right,
+      height = 800 - margin.top - margin.bottom;
+
+const svg = d3.select("#my_dataviz")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+const title = d3.select("#title")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", 60)
+  .append("g")
+  .attr("transform", `translate(${width / 3}, ${50})`)
+  .append("text")
+  .text("Social Network of Bottlenose Dolphins")
+  .attr("font-size", 18)
+  .attr("font-family", "Helvetica")
+  .attr("fill", "black");
+
+d3.csv("edges.csv").then(function(data) {
+
+  const nodes = d3.range(1, 63).map(d => ({ id : d}));
+
+  // Make sure the strings are converted into integers for use in the simulation
+  data.forEach(d => {
+    d.source = +d.source;
+    d.target = +d.target;
+  });
+
+  const link = svg
+    .selectAll("line")
+    .data(data)
+    .join("line")
+    .style("stroke", "#aaa");
+
+  const node = svg
+    .selectAll("circle")
+    .data(nodes)
+    .join("circle")
+    .attr("r", 8)
+    .style("fill", "#69b3a2");
+
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(data)
+      .id(d => d.id)
+    )
+    // Changed strength from -200 to -50 because of the larger quantity of nodes
+    .force("charge", d3.forceManyBody().strength(-50))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .on("tick", ticked);
+
+  function ticked() {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    node
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y);
+  }
+
+});
+
+</script>
