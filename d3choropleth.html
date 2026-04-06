@@ -6,9 +6,14 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   body { margin: 0; }
-  #map { height: 100vh; }
+
   .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
   circle { pointer-events: all; cursor: pointer; }
+
+  #container {
+    display: flex;
+    align-items: flex-start;
+  }
 
   #tooltip {
     position: absolute;
@@ -21,24 +26,31 @@
     display: none;
     z-index: 1000;
   }
+
   #tooltip strong { display: block; margin-bottom: 2px; }
   #tooltip span { color: #555; font-size: 12px; }
 </style>
 </head>
 <body>
-
-<div id="map"></div>
+<div id="container">
+    <div id="map" style="height: 770px; width: 1600px;"></div>
+    <div id="legend" style="height: 700px; width: 300px"></div>
+</div>
 <div id="tooltip"><strong></strong><span></span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 <script>
 
 const map = L.map('map').setView([38, -97], 4);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const svg = d3.select(map.getPanes().overlayPane).append('svg').attr('class', 'd3-overlay');
-const g   = svg.append('g').attr('class', 'leaflet-zoom-hide');
+const svg = d3.select(map.getPanes().overlayPane)
+    .append('svg')
+    .attr('class', 'd3-overlay');
+const g   = svg.append('g')
+    .attr('class', 'leaflet-zoom-hide');
 
 const tooltip = document.getElementById('tooltip')
 
@@ -53,16 +65,37 @@ d3.csv("poverty.csv").then(data => {
         nameByFips.set(fips, d.Area_Name);
         stateByFips.set(fips, d.Stabr);
     });
-
     loadMap(povertyByFips);
 })
 
 function loadMap(povertyByFips) {
     d3.json("counties.geojson").then(data => {
 
-        const color = d3.scaleSequential()
+        console.log(nameByFips);
+
+        const color = d3.scaleSequentialLog()
             .domain([d3.min([...povertyByFips.values()]), d3.max([...povertyByFips.values()])])
             .interpolator(d3.interpolateBlues);
+        
+        const legendSvg = d3.select("#legend")
+            .append('svg')
+            .attr("height", 1500)
+            .attr("width", 600);
+
+        const legendGroup = legendSvg.append("g")
+            .style("font-family", "Helvetica")
+            .attr("transform", "translate(50,200)");
+
+        var legend = d3.legendColor()
+            .labelFormat(d3.format(".0f"))
+            .cells(10)
+            .ascending(true)
+            .title("Poverty Value")
+            .titleWidth(100)
+            .scale(color);
+
+        
+        legendGroup.call(legend);
 
         L.geoJSON(data, {
             style: function(feature) {
@@ -89,8 +122,6 @@ function loadMap(povertyByFips) {
                 const name = nameByFips.get(fips);
                 const state = stateByFips.get(fips);
 
-                console.log(fips);
-
                 layer.on({
                     mouseover: function(e) {
                         const props = feature.properties;
@@ -103,7 +134,9 @@ function loadMap(povertyByFips) {
 
                         tooltip.style.display = "block";
                         tooltip.querySelector("strong").textContent =
-                            `${name}, ${state}` || "Unknown county";
+                        name != null
+                            ?`${name}, ${state}` 
+                            : "No data exists for this county.";
 
                         tooltip.querySelector("span").textContent =
                         povertyByFips.get(fips) != null

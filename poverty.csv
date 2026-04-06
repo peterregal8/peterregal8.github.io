@@ -308,14 +308,14 @@ FIPS_Code,Stabr,Area_Name,Attribute,Value
 8121,CO,Washington County,POVALL_2023,665
 8123,CO,Weld County,POVALL_2023,32284
 8125,CO,Yuma County,POVALL_2023,1225
-9110,CT,Capitol Planning Region,POVALL_2023,92788
-9120,CT,Greater Bridgeport Planning Region,POVALL_2023,36025
-9130,CT,Lower Connecticut River Valley Planning Region,POVALL_2023,12171
-9140,CT,Naugatuck Valley Planning Region,POVALL_2023,51210
-9150,CT,Northeastern Connecticut Planning Region,POVALL_2023,7277
-9160,CT,Northwest Hills Planning Region,POVALL_2023,9386
-9170,CT,South Central Connecticut Planning Region,POVALL_2023,68099
-9180,CT,Southeastern Connecticut Planning Region,POVALL_2023,33460
+9013,CT,Capitol Planning Region,POVALL_2023,92788
+9015,CT,Greater Bridgeport Planning Region,POVALL_2023,36025
+9003,CT,Lower Connecticut River Valley Planning Region,POVALL_2023,12171
+9007,CT,Naugatuck Valley Planning Region,POVALL_2023,51210
+9001,CT,Northeastern Connecticut Planning Region,POVALL_2023,7277
+9009,CT,Northwest Hills Planning Region,POVALL_2023,9386
+9005,CT,South Central Connecticut Planning Region,POVALL_2023,68099
+9011,CT,Southeastern Connecticut Planning Region,POVALL_2023,33460
 9190,CT,Western Connecticut Planning Region,POVALL_2023,49135
 10001,DE,Kent County,POVALL_2023,21471
 10003,DE,New Castle County,POVALL_2023,61487

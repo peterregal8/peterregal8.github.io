@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leaflet + D3</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  body { margin: 0; }
+  #map { height: 100vh; }
+  .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+  circle { pointer-events: all; cursor: pointer; }
+
+  #tooltip {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font: 14px sans-serif;
+    pointer-events: none;
+    display: none;
+    z-index: 1000;
+  }
+  #tooltip strong { display: block; margin-bottom: 2px; }
+  #tooltip span { color: #555; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="tooltip"><strong></strong><span></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+
+// Used in-class code from edStem as a resource from 4/2/2026
+// https://edstem.org/us/courses/91852/discussion/7885340
+
+const map = L.map('map').setView([20, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const svg = d3.select(map.getPanes().overlayPane).append('svg').attr('class', 'd3-overlay');
+const g   = svg.append('g').attr('class', 'leaflet-zoom-hide');
+
+
+const tooltip = document.getElementById('tooltip');
+
+d3.csv("states.csv").then(function(data) {
+
+    data.sort(function(a, b) {
+        return d3.ascending(+a.costRank, +b.costRank);
+    });
+
+    console.log(data);
+
+    const r = d3.scaleSqrt().domain([0, d3.max(data, d => d.housingCost)]).range([0, 10]);
+
+    const circles = g.selectAll('circle')
+    .data(data).join('circle')
+    .attr('r', d => r(d.housingCost))
+
+    // Highlighting the top 10 most expensive states using red instead of blue
+    .attr('fill', function(d) {
+        if (d.costRank < 12) {
+            return ('red');
+        } else {
+            return ('steelblue');
+        }
+    })
+    .attr('fill-opacity', 0.4)
+    .attr('stroke', 'steelblue')
+    .on('mouseover', function(event, d) {
+        d3.select(this).attr('fill-opacity', 0.7);
+        tooltip.style.display = 'block';
+        tooltip.querySelector('strong').textContent = d.State;
+        tooltip.querySelector('span').textContent = 'Housing cost: ' + d.housingCost.toLocaleString();
+    })
+    .on('mousemove', function(event) {
+        tooltip.style.left = (event.pageX + 12) + 'px';
+        tooltip.style.top  = (event.pageY - 28) + 'px';
+    })
+    .on('mouseout', function() {
+        d3.select(this).attr('fill-opacity', 0.4);
+        tooltip.style.display = 'none';
+    });
+
+    function update() {
+        const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
+        const br = map.latLngToLayerPoint(map.getBounds().getSouthEast());
+        svg.style('left', tl.x + 'px').style('top', tl.y + 'px')
+            .attr('width', br.x - tl.x).attr('height', br.y - tl.y);
+        g.attr('transform', `translate(${-tl.x},${-tl.y})`);
+        circles
+            .attr('cx', d => map.latLngToLayerPoint([d.lat, d.lng]).x)
+            .attr('cy', d => map.latLngToLayerPoint([d.lat, d.lng]).y);
+    }
+
+    update();
+    map.on('moveend', update);
+})
+</script>
+</body>
+</html>
