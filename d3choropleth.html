@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leaflet + D3</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  body { margin: 0; }
+  #map { height: 100vh; }
+  .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+  circle { pointer-events: all; cursor: pointer; }
+
+  #tooltip {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font: 14px sans-serif;
+    pointer-events: none;
+    display: none;
+    z-index: 1000;
+  }
+  #tooltip strong { display: block; margin-bottom: 2px; }
+  #tooltip span { color: #555; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="tooltip"><strong></strong><span></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+
+const map = L.map('map').setView([38, -97], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const svg = d3.select(map.getPanes().overlayPane).append('svg').attr('class', 'd3-overlay');
+const g   = svg.append('g').attr('class', 'leaflet-zoom-hide');
+
+const tooltip = document.getElementById('tooltip')
+
+const povertyByFips = new Map();
+const nameByFips = new Map();
+const stateByFips = new Map();
+
+d3.csv("poverty.csv").then(data => {
+    data.forEach(d => {
+        const fips = +d.FIPS_Code;
+        povertyByFips.set(fips, +d.Value);
+        nameByFips.set(fips, d.Area_Name);
+        stateByFips.set(fips, d.Stabr);
+    });
+
+    loadMap(povertyByFips);
+})
+
+function loadMap(povertyByFips) {
+    d3.json("counties.geojson").then(data => {
+
+        const color = d3.scaleSequential()
+            .domain([d3.min([...povertyByFips.values()]), d3.max([...povertyByFips.values()])])
+            .interpolator(d3.interpolateBlues);
+
+        L.geoJSON(data, {
+            style: function(feature) {
+                const fips = +(
+                    feature.properties.STATEFP +
+                    feature.properties.COUNTYFP
+                );
+
+                const value = povertyByFips.get(fips);
+
+                return {
+                    color: "black",
+                    weight: 0.3,
+                    fillColor: value ? color(value) : "#ccc",
+                    fillOpacity: 0.7
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                const fips = +(
+                    feature.properties.STATEFP +
+                    feature.properties.COUNTYFP
+                );
+
+                const name = nameByFips.get(fips);
+                const state = stateByFips.get(fips);
+
+                console.log(fips);
+
+                layer.on({
+                    mouseover: function(e) {
+                        const props = feature.properties;
+
+                        layer.setStyle({
+                            weight: 1,
+                            color: "#000",
+                            fillOpacity: 0.9
+                        });
+
+                        tooltip.style.display = "block";
+                        tooltip.querySelector("strong").textContent =
+                            `${name}, ${state}` || "Unknown county";
+
+                        tooltip.querySelector("span").textContent =
+                        povertyByFips.get(fips) != null
+                                ? `Value: ${povertyByFips.get(fips)}`
+                                : "No data";
+                    },
+
+                    mousemove: function(e) {
+                        tooltip.style.left = (e.originalEvent.pageX + 12) + "px";
+                        tooltip.style.top  = (e.originalEvent.pageY - 28) + "px";
+                    },
+
+                    mouseout: function(e) {
+                        layer.setStyle({
+                            weight: 0.3,
+                            color: "black",
+                            fillOpacity: 0.7
+                        });
+
+                        tooltip.style.display = "none";
+                    }
+                }); 
+            }
+        }).addTo(map);
+    });
+}
+</script>
+</body>
+</html>
