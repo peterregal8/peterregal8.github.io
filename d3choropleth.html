@@ -43,6 +43,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 <script>
 
+// Used in-class code from edStem as a resource from 4/2/2026
+// https://edstem.org/us/courses/91852/discussion/7885340
+
 const map = L.map('map').setView([38, -97], 4);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -69,6 +72,7 @@ d3.csv("poverty.csv").then(data => {
 })
 
 function loadMap(povertyByFips) {
+    // Counties geoJSON file from https://gist.github.com/sdwfrost/d1c73f91dd9d175998ed166eb216994a
     d3.json("counties.geojson").then(data => {
 
         console.log(nameByFips);
@@ -88,7 +92,7 @@ function loadMap(povertyByFips) {
 
         var legend = d3.legendColor()
             .labelFormat(d3.format(".0f"))
-            .cells(10)
+            .cells([1, 10, 100, 1000, 10000, 100000, 1000000])
             .ascending(true)
             .title("Poverty Value")
             .titleWidth(100)
@@ -140,7 +144,7 @@ function loadMap(povertyByFips) {
 
                         tooltip.querySelector("span").textContent =
                         povertyByFips.get(fips) != null
-                                ? `Value: ${povertyByFips.get(fips)}`
+                                ? `Poverty value: ${povertyByFips.get(fips)}`
                                 : "No data";
                     },
 

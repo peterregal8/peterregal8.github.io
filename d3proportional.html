@@ -10,6 +10,11 @@
   .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
   circle { pointer-events: all; cursor: pointer; }
 
+  #container {
+    display: flex;
+    align-items: flex-start;
+  }
+
   #tooltip {
     position: absolute;
     background: white;
@@ -27,11 +32,15 @@
 </head>
 <body>
 
-<div id="map"></div>
+<div id="container">
+    <div id="map" style="height: 770px; width: 1600px;"></div>
+    <div id="legend" style="height: 700px; width: 300px"></div>
+</div>
 <div id="tooltip"><strong></strong><span></span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 <script>
 
 // Used in-class code from edStem as a resource from 4/2/2026
@@ -46,34 +55,42 @@ const g   = svg.append('g').attr('class', 'leaflet-zoom-hide');
 
 const tooltip = document.getElementById('tooltip');
 
-d3.csv("states.csv").then(function(data) {
+d3.csv("states.csv", function(dataset) {
+    return {
+        costRank : +dataset["costRank"],
+        housingCost : +dataset["housingCost"],
+        state : dataset["State"],
+        lat : +dataset["lat"],
+        lng : +dataset["lng"]
+    };
+}).then(function(data) {
 
     data.sort(function(a, b) {
-        return d3.ascending(+a.costRank, +b.costRank);
+        return d3.ascending(a.costRank, b.costRank);
     });
 
     console.log(data);
 
-    const r = d3.scaleSqrt().domain([0, d3.max(data, d => d.housingCost)]).range([0, 10]);
+    color = d3.scaleThreshold()
+        .domain([13])
+        .range(["red", "steelblue"]);
+
+    const r = d3.scaleSqrt()
+        .domain([0, 350])
+        .range([1, 15]);
 
     const circles = g.selectAll('circle')
     .data(data).join('circle')
     .attr('r', d => r(d.housingCost))
 
     // Highlighting the top 10 most expensive states using red instead of blue
-    .attr('fill', function(d) {
-        if (d.costRank < 12) {
-            return ('red');
-        } else {
-            return ('steelblue');
-        }
-    })
+    .attr('fill', d => color(d.costRank))
     .attr('fill-opacity', 0.4)
     .attr('stroke', 'steelblue')
     .on('mouseover', function(event, d) {
         d3.select(this).attr('fill-opacity', 0.7);
         tooltip.style.display = 'block';
-        tooltip.querySelector('strong').textContent = d.State;
+        tooltip.querySelector('strong').textContent = d.state;
         tooltip.querySelector('span').textContent = 'Housing cost: ' + d.housingCost.toLocaleString();
     })
     .on('mousemove', function(event) {
@@ -96,6 +113,45 @@ d3.csv("states.csv").then(function(data) {
             .attr('cy', d => map.latLngToLayerPoint([d.lat, d.lng]).y);
     }
 
+    const legendSvg = d3.select("#legend")
+        .append('svg')
+        .attr("height", 1500)
+        .attr("width", 600);
+
+    const colorLegendGroup = legendSvg.append("g")
+        .style("font-family", "Helvetica")
+        .attr("transform", "translate(50,150)");
+
+    var colorLegend = d3.legendColor()
+        .labelFormat(d3.format(".0f"))
+        .ascending(false)
+        .title("Poverty Value")
+        .titleWidth(150)
+        .labels(["Top 10", "11-50"])
+        .scale(color);
+
+    
+    colorLegendGroup.call(colorLegend);
+
+
+    const sizeLegendGroup = legendSvg.append("g")
+        .style("font-family", "Helvetica")
+        .attr("transform", "translate(50,350)");
+    
+    const maxVal = d3.max(data, d => d.housingCost);
+
+    var sizeLegend = d3.legendSize()
+        .labelFormat(d3.format(".0f"))
+        .shape('circle')
+        .ascending(false)
+        .shapePadding(10)
+        .cells(6)
+        .title("Housing Cost Value")
+        .titleWidth(150)
+        .scale(r);
+
+    
+    sizeLegendGroup.call(sizeLegend);    
     update();
     map.on('moveend', update);
 })

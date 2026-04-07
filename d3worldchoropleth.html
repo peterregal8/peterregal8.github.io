@@ -6,9 +6,14 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   body { margin: 0; }
-  #map { height: 100vh; }
+
   .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
   circle { pointer-events: all; cursor: pointer; }
+
+  #container {
+    display: flex;
+    align-items: flex-start;
+  }
 
   #tooltip {
     position: absolute;
@@ -21,17 +26,21 @@
     display: none;
     z-index: 1000;
   }
+
   #tooltip strong { display: block; margin-bottom: 2px; }
   #tooltip span { color: #555; font-size: 12px; }
 </style>
 </head>
 <body>
-
-<div id="map"></div>
+<div id="container">
+    <div id="map" style="height: 770px; width: 1600px;"></div>
+    <div id="legend" style="height: 700px; width: 300px"></div>
+</div>
 <div id="tooltip"><strong></strong><span></span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 <script>
 
 // Used in-class code from edStem as a resource from 4/2/2026
@@ -40,65 +49,128 @@
 const map = L.map('map').setView([20, 0], 2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const svg = d3.select(map.getPanes().overlayPane).append('svg').attr('class', 'd3-overlay');
-const g   = svg.append('g').attr('class', 'leaflet-zoom-hide');
+const svg = d3.select(map.getPanes().overlayPane)
+    .append('svg')
+    .attr('class', 'd3-overlay');
+const g   = svg.append('g')
+    .attr('class', 'leaflet-zoom-hide');
 
+const tooltip = document.getElementById('tooltip')
 
-const tooltip = document.getElementById('tooltip');
+const birthByCountry = new Map();
+const nameByFips = new Map();
+const stateByFips = new Map();
 
-d3.csv("states.csv").then(function(data) {
-
-    data.sort(function(a, b) {
-        return d3.ascending(+a.costRank, +b.costRank);
+d3.csv("world-data-2023.csv", function(dataset) {
+    return {
+        birth_rate : +dataset["Birth Rate"],
+        country : dataset["Country"]
+    };
+}).then(data => {
+    data.forEach(d => {
+        birthByCountry.set(d.country, d.birth_rate);
     });
-
-    console.log(data);
-
-    const r = d3.scaleSqrt().domain([0, d3.max(data, d => d.housingCost)]).range([0, 10]);
-
-    const circles = g.selectAll('circle')
-    .data(data).join('circle')
-    .attr('r', d => r(d.housingCost))
-
-    // Highlighting the top 10 most expensive states using red instead of blue
-    .attr('fill', function(d) {
-        if (d.costRank < 12) {
-            return ('red');
-        } else {
-            return ('steelblue');
-        }
-    })
-    .attr('fill-opacity', 0.4)
-    .attr('stroke', 'steelblue')
-    .on('mouseover', function(event, d) {
-        d3.select(this).attr('fill-opacity', 0.7);
-        tooltip.style.display = 'block';
-        tooltip.querySelector('strong').textContent = d.State;
-        tooltip.querySelector('span').textContent = 'Housing cost: ' + d.housingCost.toLocaleString();
-    })
-    .on('mousemove', function(event) {
-        tooltip.style.left = (event.pageX + 12) + 'px';
-        tooltip.style.top  = (event.pageY - 28) + 'px';
-    })
-    .on('mouseout', function() {
-        d3.select(this).attr('fill-opacity', 0.4);
-        tooltip.style.display = 'none';
-    });
-
-    function update() {
-        const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-        const br = map.latLngToLayerPoint(map.getBounds().getSouthEast());
-        svg.style('left', tl.x + 'px').style('top', tl.y + 'px')
-            .attr('width', br.x - tl.x).attr('height', br.y - tl.y);
-        g.attr('transform', `translate(${-tl.x},${-tl.y})`);
-        circles
-            .attr('cx', d => map.latLngToLayerPoint([d.lat, d.lng]).x)
-            .attr('cy', d => map.latLngToLayerPoint([d.lat, d.lng]).y);
-    }
-
-    update();
-    map.on('moveend', update);
+    loadMap(birthByCountry);
 })
+
+function loadMap(birthByCountry) {
+    // Countries geoJSON file from https://github.com/datasets/geo-countries/blob/main/data/countries.geojson
+
+    // I did my best to clean up the csv file to make sure as many countries as possible were accurately represented.
+    // However, there were a few countries listed in the countries.geojson that did not have data associated with them.
+    d3.json("countries.geojson").then(data => {
+
+        console.log(birthByCountry);
+
+        console.log(Math.ceil(d3.max([...birthByCountry.values()]) / 10) * 10);
+
+        const color = d3.scaleSequential()
+            .domain([d3.min([...birthByCountry.values()]), Math.ceil(d3.max([...birthByCountry.values()]) / 10) * 10])
+            .interpolator(d3.interpolateBlues);
+        
+        const legendSvg = d3.select("#legend")
+            .append('svg')
+            .attr("height", 1500)
+            .attr("width", 600);
+
+        const legendGroup = legendSvg.append("g")
+            .style("font-family", "Helvetica")
+            .attr("transform", "translate(50,200)");
+
+        var legend = d3.legendColor()
+            .labelFormat(d3.format(".0f"))
+            .cells(6)
+            .ascending(true)
+            .title("Birth Rate")
+            .titleWidth(100)
+            .scale(color);
+
+        
+        legendGroup.call(legend);
+
+        L.geoJSON(data, {
+            style: function(feature) {
+
+                const name = feature.properties.name;
+
+                console.log(name);
+
+                const value = birthByCountry.get(name);
+
+                return {
+                    color: "black",
+                    weight: 0.3,
+                    fillColor: value ? color(value) : "#ccc",
+                    fillOpacity: 0.7
+                };
+            },
+            onEachFeature: function(feature, layer) {
+
+                const name = feature.properties.name;
+                
+                const value = birthByCountry.get(name);
+
+                layer.on({
+                    mouseover: function(e) {
+                        const props = feature.properties;
+
+                        layer.setStyle({
+                            weight: 1,
+                            color: "#000",
+                            fillOpacity: 0.9
+                        });
+
+                        tooltip.style.display = "block";
+                        tooltip.querySelector("strong").textContent =
+                        name != null
+                            ?`${name}` 
+                            : "No data exists for this county.";
+
+                        tooltip.querySelector("span").textContent =
+                        birthByCountry.get(name) != null
+                                ? `Birth Rate: ${value}`
+                                : "No data";
+                    },
+
+                    mousemove: function(e) {
+                        tooltip.style.left = (e.originalEvent.pageX + 12) + "px";
+                        tooltip.style.top  = (e.originalEvent.pageY - 28) + "px";
+                    },
+
+                    mouseout: function(e) {
+                        layer.setStyle({
+                            weight: 0.3,
+                            color: "black",
+                            fillOpacity: 0.7
+                        });
+
+                        tooltip.style.display = "none";
+                    }
+                }); 
+            }
+        }).addTo(map);
+    });
+}
 </script>
 </body>
 </html>
