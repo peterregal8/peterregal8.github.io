@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Deceptive vs. Ethical Visualizations in D3</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+<style>
+    body { margin: 0; }
+
+    .d3-overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+    circle { pointer-events: all; cursor: pointer; }
+
+    #container {
+    display: flex;
+    align-items: flex-start;
+    }
+
+    #tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    #tooltip strong { display: block; margin-bottom: 2px; }
+    #tooltip span { color: #555; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <div id="deceptive" style="height: 770px; width: 700px;"></div>
+    <div id="ethical" style="height: 770px; width: 700px"></div>
+</div>
+<div id="tooltip"><strong></strong><span></span></div>
+
+<script>
+
+
+    // As stated above, I heavily used the in-class code provided (https://edstem.org/us/courses/91852/discussion/7700634?answer=17874522) as a reference
+    // for this visualization. The scaling and tooltips are an identical implementation to that code, and I added my own svg text elements for the title,
+    // axes, and labels.
+
+    const deceptiveWidth = 700;
+    const deceptiveHeight = 500;
+    const margin = { top: 100, right: 20, bottom: 50, left: 150 };
+    const width = deceptiveWidth - margin.left - margin.right;
+    const height = deceptiveHeight - margin.top - margin.bottom;
+
+    const ethicalWidth = 700;
+    const ethicalHeight = 500;
+
+
+    d3.csv("education.csv", function(data) {
+        return {
+            year : +data["Year"],
+            students : +data["Part-Time Male"]
+        };
+    }).then(function(dataset) {
+
+        const deceptiveData = dataset.filter(function(d) {
+            return (d.year === 1985) || (d.year === 1989) || (d.year === 1998);
+        });
+
+        console.log(dataset);
+
+        console.log(deceptiveData);
+
+        const deceptive = d3.select("#deceptive")
+            .append("svg")
+            .attr("width", deceptiveWidth)
+            .attr("height", deceptiveHeight);
+        
+        const ethical = d3.select("#ethical")
+            .append("svg")
+            .attr("width", ethicalWidth)
+            .attr("height", ethicalHeight);
+
+        const deceptiveChart = deceptive.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+        const ethicalChart = ethical.append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        deceptive.append("text")
+            .attr("x", width / 2.25)
+            .attr("y", margin.top / 2)
+            .style("font-family", "Helvetica")
+            .text("Deceptive - Part-Time Male Enrollment from 1985 to 1998");
+
+        deceptive.append("text")
+            .attr("x", width / 1.5)
+            .attr("y", deceptiveHeight - margin.bottom + 40)
+            .style("font-family", "Helvetica")
+            .text("Year");
+
+        var rotateY = margin.top / 2;
+
+        deceptive.append("text")
+            .attr("x", 100)
+            .attr("y", margin.top / 2)
+            .attr("transform", "rotate(270, 240, 210)")
+            .style("font-family", "Helvetica")
+            .text("Students (Millions)");
+
+        ethical.append("text")
+            .attr("x", width / 2.25)
+            .attr("y", margin.top / 2)
+            .style("font-family", "Helvetica")
+            .text("Ethical - Part-Time Male Enrollment from 1970 to 2005");
+
+        ethical.append("text")
+            .attr("x", width / 1.5)
+            .attr("y", ethicalHeight - margin.bottom + 40)
+            .style("font-family", "Helvetica")
+            .text("Year");
+
+        var rotateY = margin.top / 2;
+
+        ethical.append("text")
+            .attr("x", 100)
+            .attr("y", margin.top / 2)
+            .attr("transform", "rotate(270, 240, 210)")
+            .style("font-family", "Helvetica")
+            .text("Students (Millions)");
+
+        // Scaling and tooltips 
+        const deceptiveScaleX = d3.scaleLinear()
+            .domain([1985, 1998])
+            .range([0, width]);
+        
+        const ethicalScaleX = d3.scaleLinear()
+            .domain([d3.min(dataset, d => d.year), d3.max(dataset, d => d.year) + 1])
+            .range([0, width])
+
+        const deceptiveScaleY = d3.scaleLinear()
+            .domain([1800000, 2100000])
+            .range([height, 0]);
+        
+        const ethicalScaleY = d3.scaleLinear()
+            .domain([d3.min(dataset, d => d.students), d3.max(dataset, d => d.students)])
+            .range([height, 0]);
+        
+        deceptiveChart.append("g")
+            .attr("class", "axis axis-x")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(deceptiveScaleX));
+
+        deceptiveChart.append("g")
+            .attr("class", "axis axis-y")
+            .call(d3.axisLeft(deceptiveScaleY).ticks(5));
+
+        ethicalChart.append("g")
+            .attr("class", "axis axis-x")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(ethicalScaleX).ticks(8));
+
+        ethicalChart.append("g")
+            .attr("class", "axis axis-y")
+            .call(d3.axisLeft(ethicalScaleY).ticks(5));
+        
+        const deceptiveLine = d3.line()
+            .x(d => deceptiveScaleX(d.year))
+            .y(d => deceptiveScaleY(d.students))
+
+        const ethicalLine = d3.line()
+            .x(d => ethicalScaleX(d.year))
+            .y(d => ethicalScaleY(d.students));
+
+        // Tooltip reference
+        const tooltip = d3.select("#tooltip");
+
+        deceptiveChart.append("path")
+            .datum(deceptiveData)
+            .attr("d", deceptiveLine)
+            .style("fill", "none")
+            .style("stroke", "orangered")
+            .style("stroke-width", 2);
+        
+        deceptiveChart.selectAll(".bar")
+            .data(deceptiveData)
+            .enter()
+            .append("circle")
+            .attr("class", "bar")
+            .attr("cx", d => deceptiveScaleX(d.year))
+            .attr("cy", d => deceptiveScaleY(d.students))
+            .attr("fill", "orangered")
+            .attr("r", 5)
+            .on("mouseover", (event, d) => {
+                d3.select(event.currentTarget)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2);
+
+                tooltip
+                    .html(`Year: </text>${d.year}<text>, Students: </text> ${d.students}`)
+                    .style("opacity", 1)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2)
+                    .style("font-family", "Helvetica");
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                d3.select(event.currentTarget)
+                    .attr("stroke", "none")
+                tooltip.style("opacity", 0);
+            });   
+    
+        ethicalChart.append("path")
+            .datum(dataset)
+            .attr("d", ethicalLine)
+            .style("fill", "none")
+            .style("stroke", "orangered")
+            .style("stroke-width", 2);
+        
+
+        ethicalChart.selectAll(".bar")
+            .data(dataset)
+            .enter()
+            .append("circle")
+            .attr("class", "bar")
+            .attr("cx", d => ethicalScaleX(d.year))
+            .attr("cy", d => ethicalScaleY(d.students))
+            .attr("fill", "orangered")
+            .attr("r", 5)
+            .on("mouseover", (event, d) => {
+                d3.select(event.currentTarget)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2);
+
+                tooltip
+                    .html(`Year: </text>${d.year}<text>, Students: </text> ${d.students}`)
+                    .style("opacity", 1)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2)
+                    .style("font-family", "Helvetica");
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                d3.select(event.currentTarget)
+                    .attr("stroke", "none")
+                tooltip.style("opacity", 0);
+            });  
+    });
+</script>
+</body>
+</html>
