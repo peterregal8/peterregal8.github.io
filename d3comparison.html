@@ -33,7 +33,7 @@
 </style>
 </head>
 <body>
-
+<div id="specification" style="height: 100px; width: 1400px;"></div>
 <div id="container">
     <div id="deceptive" style="height: 770px; width: 700px;"></div>
     <div id="ethical" style="height: 770px; width: 700px"></div>
@@ -55,6 +55,17 @@
 
     const ethicalWidth = 700;
     const ethicalHeight = 500;
+
+    d3.select("#specification")
+        .append("svg")
+        .attr("width", 1400)
+        .attr("height", 100)
+        .append("text")
+        .attr("x", 500)
+        .attr("y", 50)
+        .style("font-family", "Helvetica")
+        .text("Going for the B(85) specification on this assignment");
+
 
 
     d3.csv("education.csv", function(data) {
