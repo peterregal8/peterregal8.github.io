@@ -86,7 +86,7 @@ function loadMap(birthByCountry) {
 
         const color = d3.scaleSequential()
             .domain([d3.min([...birthByCountry.values()]), Math.ceil(d3.max([...birthByCountry.values()]) / 10) * 10])
-            .interpolator(d3.interpolateBlues);
+            .interpolator(d3.interpolateReds);
         
         const legendSvg = d3.select("#legend")
             .append('svg')

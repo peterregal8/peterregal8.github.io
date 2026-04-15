@@ -79,7 +79,7 @@ function loadMap(povertyByFips) {
 
         const color = d3.scaleSequentialLog()
             .domain([d3.min([...povertyByFips.values()]), d3.max([...povertyByFips.values()])])
-            .interpolator(d3.interpolateBlues);
+            .interpolator(d3.interpolateReds);
         
         const legendSvg = d3.select("#legend")
             .append('svg')
